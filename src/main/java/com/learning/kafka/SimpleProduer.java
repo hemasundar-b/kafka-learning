@@ -10,9 +10,11 @@ public class SimpleProduer {
 
 	public static void main(String[] args) {
 		
+		String hostip = args[0];
+		
 		String topic = "learning";
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "192.168.29.151:9092");
+		props.put("bootstrap.servers", hostip);
 		props.put("acks", "all");
 		props.put("retries", 0);
 		props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
