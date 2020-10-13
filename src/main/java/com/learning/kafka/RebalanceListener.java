@@ -8,7 +8,7 @@ import org.apache.kafka.common.TopicPartition;
 public class RebalanceListener implements ConsumerRebalanceListener {
 
 	public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-		
+		System.out.println("Rebalance Triggered");
 
 	}
 
