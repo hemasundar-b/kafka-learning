@@ -1,0 +1,20 @@
+
+
+# Create Consumer Group
+
+kafka-console-consumer \
+--bootstrap-server localhost:9092 \
+--topic learning \
+--consumer-property group.id=learning-cg
+
+# Describe Consumer Group
+
+kafka-consumer-groups.sh \
+--bootstrap-server localhost:9092 \
+--describe --group learning-cg
+
+# Consume Message
+
+kafka-console-consumer \
+--bootstrap-server localhost:9092 \
+--topic learning

@@ -21,9 +21,14 @@ public class ConsumerThread implements Runnable {
 
 	public ConsumerThread(Properties kafkaProps, Properties applicationProps) {
 		this.topics = applicationProps.getProperty("topics");
-		this.consumer = new KafkaConsumer<String, String>(kafkaProps);
+		try {
+			this.consumer = new KafkaConsumer<String, String>(kafkaProps);
+			System.out.println("created Consumer");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		this.consumer.subscribe(Collections.singleton(this.topics), new RebalanceListener());
-		this.applicationProps = applicationProps;	
+		this.applicationProps = applicationProps;
 		this.batchSize = Integer.parseInt(applicationProps.getProperty("batch.size"));
 		this.pollDuration = Integer.parseInt(applicationProps.getProperty("poll.duration"));
 		this.outputContainer = new ArrayList<String>();
@@ -42,18 +47,22 @@ public class ConsumerThread implements Runnable {
 		try {
 			while (true) {
 				ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(pollDuration));
+				if (!records.isEmpty()) {
+					System.out.println("Records fetched in the poll");
+				}
 				for (ConsumerRecord<String, String> record : records) {
 					outputContainer.add(record.value().toString());
 					if (outputContainer.size() >= batchSize) {
+						System.out.println("Batch Threshold reached. Writing to Disk");
 						sb.append(String.join("\n", outputContainer));
 						try {
 							IOUtils.writeToFile(applicationProps, sb.toString());
+							doCommit();
+							sb = null;
+							outputContainer.clear();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						doCommit();
-						sb = null;
-						outputContainer.clear();
 					}
 				}
 			}
