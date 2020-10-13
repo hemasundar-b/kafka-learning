@@ -18,3 +18,14 @@ kafka-consumer-groups.sh \
 kafka-console-consumer \
 --bootstrap-server localhost:9092 \
 --topic learning
+
+# Create Re-Balance Topic
+
+kafka-topics \
+--create \
+--topic rebalance-topic \
+--bootstrap-server localhost:9092 \
+--partitions 3 \
+--replication-factor 1
+
+

@@ -23,7 +23,6 @@ public class ConsumerDriverMain {
 		
 		Properties kafkaProps = getProperties(kafkaConfigFile);
 		Properties applicationProps = getProperties(applicationConfigFile);
-		System.out.println(kafkaProps);
 		
 		ConsumerThreadGroup group = new ConsumerThreadGroup(applicationProps, kafkaProps, numInstances);
 		group.execute();

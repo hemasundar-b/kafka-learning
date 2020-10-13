@@ -2,12 +2,15 @@ package com.learning.kafka;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 
 public class ConsumerThread implements Runnable {
 
@@ -17,9 +20,19 @@ public class ConsumerThread implements Runnable {
 	private int batchSize;
 	private int pollDuration;
 	private ArrayList<String> outputContainer;
-	private StringBuilder sb;
 
-	public ConsumerThread(Properties kafkaProps, Properties applicationProps) {
+	private class RebalanceListener implements ConsumerRebalanceListener {
+		public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+			if (!outputContainer.isEmpty()) {
+				doProcessing();
+				doCommit();
+			}		
+		}
+		public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+		}
+	}
+
+	public ConsumerThread(Properties kafkaProps, Properties applicationProps) {	
 		this.topics = applicationProps.getProperty("topics");
 		try {
 			this.consumer = new KafkaConsumer<String, String>(kafkaProps);
@@ -32,12 +45,23 @@ public class ConsumerThread implements Runnable {
 		this.batchSize = Integer.parseInt(applicationProps.getProperty("batch.size"));
 		this.pollDuration = Integer.parseInt(applicationProps.getProperty("poll.duration"));
 		this.outputContainer = new ArrayList<String>();
-		this.sb = new StringBuilder();
 	}
 
 	private void doCommit() {
 		try {
 			consumer.commitSync();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void doProcessing() {	
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.join("\n", outputContainer));
+		try {
+			IOUtils.writeToFile(applicationProps, sb.toString());
+			doCommit();
+			outputContainer.clear();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -54,15 +78,7 @@ public class ConsumerThread implements Runnable {
 					outputContainer.add(record.value().toString());
 					if (outputContainer.size() >= batchSize) {
 						System.out.println("Batch Threshold reached. Writing to Disk");
-						sb.append(String.join("\n", outputContainer));
-						try {
-							IOUtils.writeToFile(applicationProps, sb.toString());
-							doCommit();
-							sb = null;
-							outputContainer.clear();
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+						doProcessing();
 					}
 				}
 			}

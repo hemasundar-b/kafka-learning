@@ -12,7 +12,7 @@ public class SimpleProduer {
 		
 		String hostip = args[0];
 		
-		String topic = "learning";
+		String topic = "rebalance-topic";
 		Properties props = new Properties();
 		props.put("bootstrap.servers", hostip);
 		props.put("acks", "all");
@@ -24,7 +24,7 @@ public class SimpleProduer {
 		
 		try {
 			producer = new KafkaProducer<String, String>(props);
-			for (int i = 0; i <= 100; i++) {
+			for (int i = 0; i < 1000; i++) {
 				ProducerRecord<String, String> record = new ProducerRecord<String, String>(topic, Integer.valueOf(i).toString());
 				producer.send(record);
 			}
