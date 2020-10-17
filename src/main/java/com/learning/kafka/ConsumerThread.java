@@ -19,20 +19,30 @@ public class ConsumerThread implements Runnable {
 	private Properties applicationProps;
 	private int batchSize;
 	private int pollDuration;
+	private long batchDuration;
 	private ArrayList<String> outputContainer;
+	private long startTime;
 
 	private class RebalanceListener implements ConsumerRebalanceListener {
 		public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+			System.out.println("Rebalancing. Partitions will be revoked.");
+
 			if (!outputContainer.isEmpty()) {
+				System.out.println("Rebalance started");
 				doProcessing();
 				doCommit();
-			}		
+				startTime = System.nanoTime();
+			}
+
 		}
+		
 		public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+		
 		}
+
 	}
 
-	public ConsumerThread(Properties kafkaProps, Properties applicationProps) {	
+	public ConsumerThread(Properties kafkaProps, Properties applicationProps) {
 		this.topics = applicationProps.getProperty("topics");
 		try {
 			this.consumer = new KafkaConsumer<String, String>(kafkaProps);
@@ -43,33 +53,40 @@ public class ConsumerThread implements Runnable {
 		this.consumer.subscribe(Collections.singleton(this.topics), new RebalanceListener());
 		this.applicationProps = applicationProps;
 		this.batchSize = Integer.parseInt(applicationProps.getProperty("batch.size"));
+		this.batchDuration = Long.parseLong(applicationProps.getProperty("batch.duration"));
 		this.pollDuration = Integer.parseInt(applicationProps.getProperty("poll.duration"));
 		this.outputContainer = new ArrayList<String>();
 	}
 
 	private void doCommit() {
 		try {
-			consumer.commitSync();
+			this.consumer.commitSync();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void doProcessing() {	
+	private void doProcessing() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.join("\n", outputContainer));
 		try {
 			IOUtils.writeToFile(applicationProps, sb.toString());
 			doCommit();
 			outputContainer.clear();
+			startTime = System.nanoTime();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void run() {
+		startTime = System.nanoTime();
 		try {
 			while (true) {
+				// Thread.sleep(100);
+				if (((System.nanoTime() - startTime) / 1000000000 >= batchDuration) && (!outputContainer.isEmpty())) {
+					doProcessing();
+				}
 				ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(pollDuration));
 				if (!records.isEmpty()) {
 					System.out.println("Records fetched in the poll");

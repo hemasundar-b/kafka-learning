@@ -1,4 +1,14 @@
+# Start zookeeper
 
+zooker-server-start $KAFKA_PROPERTIES_PATH/zookeeper.properties
+
+# Start Kafka
+
+kafka-server-start $KAFKA_PROPERTIES_PATH/server.properties
+
+java -jar kafka-ingest.jar consumer.properties application.properties 1
+
+java -jar kafka-ingest.jar ../src/main/resources/consumer.properties ../src/main/resources/application.properties 1
 
 # Create Consumer Group
 
@@ -9,7 +19,7 @@ kafka-console-consumer \
 
 # Describe Consumer Group
 
-kafka-consumer-groups.sh \
+kafka-consumer-groups \
 --bootstrap-server localhost:9092 \
 --describe --group learning-cg
 

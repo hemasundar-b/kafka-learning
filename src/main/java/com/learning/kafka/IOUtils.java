@@ -5,8 +5,11 @@ import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
+import java.util.UUID;
 
 public class IOUtils {
+	
+	
 
 	public static void writeToFile(Properties applicationProps, String output) throws Exception {
 		
@@ -17,7 +20,7 @@ public class IOUtils {
 		String completeFilePath = applicationProps.getProperty("output.file.path") + "/"
 				+ applicationProps.getProperty("output.file.prefix") + "_"
 				+ applicationProps.getProperty("output.file.name") + "_"
-				+ currentDate + "_"
+				+ currentDate + "_" + UUID.randomUUID().toString() + '_'
 				+ Thread.currentThread().getName() 
 				+ applicationProps.getProperty("output.file.suffix");
 
